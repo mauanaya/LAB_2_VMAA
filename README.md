@@ -19,4 +19,4 @@ Laboratorio 2 de la materia de Microstructuras y Sistemas de Trading: análisis 
 
 ##### Contacto:
 I.F. Victor Mauricio Anaya Avalos
-if702705@iteso.mx
+ - if702705@iteso.mx
