@@ -90,11 +90,67 @@ def f_columnas_pips(param_data):
         else:
             param_data['pips'][i] = (param_data.openprice[i] - param_data.closeprice[i])*f_pip_size(param_ins=param_data['symbol'][i])
     
+    param_data['pips_acm'] = np.zeros(len(param_data['type']))
+    param_data['profit_acm'] = np.zeros(len(param_data['type']))    
+    param_data['pips_acm'][0] = param_data['pips'][0]
+    param_data['profit_acm'][0] = param_data['profit'][0]
+            
+    for i in range(1,len(param_data['pips'])):
+         param_data['pips_acm'][i] = param_data['pips_acm'][i-1] + param_data['pips'][i]
+         param_data['profit_acm'][i] = param_data['profit_acm'][i-1] + param_data['profit'][i]
+        
     return param_data
     
 
     
 #%% FUNCION:
-#def f_estadisticas_ba():
-#    
+def f_estadisticas_ba(param_data):
+    df_1_tabla = pd.DataFrame(columns= 'medida', 'valor', 'descripcion')
+    medida = ['Ops totales', 'Ganadoras', 'Ganadoras_c', 'Ganadoras_v', 'Perdedoras', 'perdedoras_c', 'Perdedoras_v', 
+              'Media(profit)','Media(pips)', 'r_efectividad', 'r_proporcion', 'r_efectividad_c','r_efectividad_v']
+    descripcion = ['Operaciones totales', 'operaciones ganadoras', 'operaciones ganadoras de compra', 'operaciones ganadoras de venta',
+                   'operaciones perdedoras', 'operaciones perdedoras de compra', 'operaciones perdedoras de venta', 'mediana de profit de operaciones', 
+                   'media de pips de operaciones', 'ganadoras totales / operaciones totales', 'perdedoras totales / operaciones totales',
+                   'perdedoras totales / ganadoras totales', 'ganadoras compra / operaciones totales', 'ganadoras ventas / operaciones totales']
+    df_1_tabla['valor'][0] = len(param_data['profit'])
+    df_1_tabla['valor'][1] = param_data['profit'].gt(0).sum()
+    x = 0
+    for i in range(0,len(param_data['type'])): 
+        if param_data['type'][i] == 'buy' and param_data['profit'][i] > 0 :
+            x = x+1
+    df_1_tabla['valor'][2] = x
+    
+    x = 0
+    for i in range(0,len(param_data['type'])): 
+        if param_data['type'][i] == 'sell' and param_data['profit'][i] > 0 :
+            x = x+1
+    df_1_tabla['valor'][3] = x
+    df_1_tabla['valor'][4] = df_1_tabla['valor'][0] - df_1_tabla['valor'][1]
+    x = 0
+    for i in range(0,len(param_data['type'])): 
+        if param_data['type'][i] == 'buy' and param_data['profit'][i] < 0 :
+            x = x+1
+    df_1_tabla['valor'][5] = x
+    
+    x = 0
+    for i in range(0,len(param_data['type'])): 
+        if param_data['type'][i] == 'sell' and param_data['profit'][i] < 0 :
+            x = x+1
+    df_1_tabla['valor'][6] = x
+    df_1_tabla['valor'][7] = param_data.profit.median()
+    df_1_tabla['valor'][8] = param_data.pips.median()
+    df_1_tabla['valor'][9] = df_1_tabla['valor'][1] / df_1_tabla['valor'][0]
+    df_1_tabla['valor'][10] = df_1_tabla['valor'][4] / df_1_tabla['valor'][1]
+    df_1_tabla['valor'][11] = df_1_tabla['valor'][2] / df_1_tabla['valor'][0] 
+    df_1_tabla['valor'][12] = df_1_tabla['valor'][3] / df_1_tabla['valor'][0] 
+    
+    for i in range(0,len(medida)):
+        df_1_tabla['medida'][i] = medida[i]
+        df_1_tabla['descripcion'][i] = descripcion[i]
+    
+        
+
+
+    
+   
     
