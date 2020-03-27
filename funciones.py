@@ -65,8 +65,8 @@ def f_pip_size(param_ins):
     
     #lista de pips por instrumento
     pips_inst =  {'audusd' : 10000, 'gbpusd': 10000, 'xauusd': 10, 'eurusd': 10000, 'xaueur': 10,
-                  'nas100usd': 10, 'us30usd': 10, 'mbtcusd':100, 'usdmxn': 10000, 'eurjpy':10000, 
-                  'gbpjpy':10000, 'usdjpy':10000, 'btcusd':10, 'eurgbp':10000, 'usdcad':10000,}
+                  'nas100usd': 10, 'us30usd': 10, 'mbtcusd':100, 'usdmxn': 10000, 'eurjpy':100, 
+                  'gbpjpy':100, 'usdjpy':100, 'btcusd':10, 'eurgbp':10000, 'usdcad':10000,}
     
     return pips_inst[param_ins]
 
