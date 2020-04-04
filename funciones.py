@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import math as math
 from  datetime import date, timedelta
+import yfinance as yf 
 #%% FUNCION: leer archivo
 def f_leer_archivo(param_archivo):
     """"
@@ -192,104 +193,142 @@ def f_capital_acum(param_data):
     return param_data  
 
 #%% FUNCION
+    
 def f_profit_diario(param_data):
     
     capital = 5000
     
-    s_date = param_data['closetime'][0].date()
-    e_date = param_data['closetime'][len(param_data['closetime'])-1].date()
+    s_date = param_data["closetime"][0].date()   # start date
+    e_date = param_data["closetime"][len(param_data["closetime"])-1].date()  # end date
     
-    delta = e_date - s_date
+    delta = e_date - s_date       # as timedelta
     
-    zero_data = np.zeros(shape=(delta.days+1, 4))
+    sp = yf.download('^gspc', 
+                          start=s_date, 
+                          end=e_date, 
+                          progress=False)
+    sp.head()
+    sp = sp.reset_index()
+    
+    
+    sp['Rendimientos Log'] = np.zeros(len(sp['Adj Close']))
+    for i in range (1,len(sp['Adj Close'])):
+        sp['Rendimientos Log'][i] = np.log(sp['Adj Close'][i]/sp['Adj Close'][i-1])
+        
+    
+    zero_data = np.zeros(shape=(delta.days+1,6))
     df_profit_d = pd.DataFrame(zero_data, columns = ['Timestamp','Profit Diario',
-                                                     'Profit Acumulado Diario','Rendimientos Log'])
+                                                     'Capital Acumulado', 'Rendimientos Log','Rend Log SP',
+                                                     'Traceback Error'])
+    zero_data = np.zeros(shape=(delta.days+1,4))    
     df_profit_dc = pd.DataFrame(zero_data, columns = ['Timestamp','Profit Diario',
-                                                     'Profit Acumulado Diario','Rendimientos Log'])
+                                                     'Capital Acumulado', 'Rendimientos Log'])
     df_profit_dv = pd.DataFrame(zero_data, columns = ['Timestamp','Profit Diario',
-                                                     'Profit Acumulado Diario','Rendimientos Log'])
+                                                     'Capital Acumulado', 'Rendimientos Log'])
     
-    for i in range(0,delta.days + 1):
-        df_profit_d['Timestamp'][i] = s_date + timedelta(days=i)
-        df_profit_dc['Timestamp'][i] = s_date + timedelta(days=i)
-        df_profit_dv['Timestamp'][i] = s_date + timedelta(days=i)
     
-
-    for i in range(0,len(df_profit_d['Timestamp'])):
+    for i in range(0,delta.days+1):
+        df_profit_d["Timestamp"][i]= s_date + timedelta(days=i)
+        df_profit_dc["Timestamp"][i]= s_date + timedelta(days=i)
+        df_profit_dv["Timestamp"][i]= s_date + timedelta(days=i)
+        
+        
+    for i in range (0,len(df_profit_d["Timestamp"])):
         a = 0
         b = 0
         c = 0
         
-        for k in range (0,len(param_data['closetime'])):
-            if df_profit_d['Timestamp'][i] == param_data['closetime'][k].date():
-                a = a + param_data['profit'][k]
+        for k in range (0,len(param_data["closetime"])):
+            if df_profit_d["Timestamp"][i] == param_data["closetime"][k].date():
+                a = a + param_data["profit"][k]
                 
                 if param_data['type'][k] == 'buy':
-                    b = b + param_data['profit'][k]
+                    b = b + param_data["profit"][k]
                     
-                else:
-                    c = c + param_data['profit'][k]
+                elif param_data['type'][k] == 'sell':
+                    c = c + param_data["profit"][k]
+            
+        df_profit_d["Profit Diario"][i] = a
+        df_profit_dc["Profit Diario"][i] = b
+        df_profit_dv["Profit Diario"][i] = c  
+            
+    for i in range (0,len(df_profit_d["Timestamp"])):
+        
+        for k in range (0,len(sp["Date"])):
+            if df_profit_d["Timestamp"][i] == sp["Date"][k].date():
+                df_profit_d["Rend Log SP"][i] = sp["Rendimientos Log"][k]
                 
-        df_profit_d['Profit Diario'][i] = a
-        df_profit_dc['Profit Diario'][i] = b
-        df_profit_dv['Profit Diario'][i] = c
         
     df_profit_d = df_profit_d.sort_values(by=['Timestamp'])
     df_profit_d = df_profit_d.reset_index(drop=True)
-        
+    
     df_profit_dc = df_profit_dc.sort_values(by=['Timestamp'])
     df_profit_dc = df_profit_dc.reset_index(drop=True)
-        
+    
     df_profit_dv = df_profit_dv.sort_values(by=['Timestamp'])
     df_profit_dv = df_profit_dv.reset_index(drop=True)
     
-        
-    df_profit_d['Profit Acumulado Diario'][0] = capital + df_profit_d['Profit Diario'][0]
-    df_profit_d['Rendimientos Log'][0] = np.log(df_profit_d['Profit Acumulado Diario'][0] / capital)
+    df_profit_d['Capital Acumulado'][0] = capital + df_profit_d['Profit Diario'][0]
+    df_profit_d['Rendimientos Log'][0] = np.log(df_profit_d['Capital Acumulado'][0]/capital)
     
-    df_profit_dc['Profit Acumulado Diario'][0] = capital + df_profit_dc['Profit Diario'][0]
-    df_profit_dc['Rendimientos Log'][0] = np.log(df_profit_dc['Profit Acumulado Diario'][0] / capital)
-        
-    df_profit_dv['Profit Acumulado Diario'][0] = capital + df_profit_dv['Profit Diario'][0]
-    df_profit_dv['Rendimientos Log'][0] = np.log(df_profit_dv['Profit Acumulado Diario'][0] / capital)
-        
+    df_profit_dc['Capital Acumulado'][0] = capital + df_profit_dc['Profit Diario'][0]
+    df_profit_dc['Rendimientos Log'][0] = np.log(df_profit_dc['Capital Acumulado'][0]/capital)
     
-    for i in range(1,len(df_profit_d['Profit Diario'])):
-
-        df_profit_d['Profit Acumulado Diario'][i] = df_profit_d['Profit Acumulado Diario'][i-1] + df_profit_d['Profit Diario'][i]
-        df_profit_d['Rendimientos Log'][i] = np.log(df_profit_d['Profit Acumulado Diario'][i]/df_profit_d['Profit Acumulado Diario'][i-1])
-        
-        df_profit_dc['Profit Acumulado Diario'][i] = df_profit_dc['Profit Acumulado Diario'][i-1] + df_profit_dc['Profit Diario'][i]
-        df_profit_dc['Rendimientos Log'][i] = np.log(df_profit_dc['Profit Acumulado Diario'][i]/df_profit_dc['Profit Acumulado Diario'][i-1])
-    
-        df_profit_dv['Profit Acumulado Diario'][i] = df_profit_dv['Profit Acumulado Diario'][i-1] + df_profit_dv['Profit Diario'][i]
-        df_profit_dv['Rendimientos Log'][i] = np.log(df_profit_dv['Profit Acumulado Diario'][i]/df_profit_dv['Profit Acumulado Diario'][i-1])
-    
-    
+    df_profit_dv['Capital Acumulado'][0] = capital + df_profit_dv['Profit Diario'][0]
+    df_profit_dv['Rendimientos Log'][0] = np.log(df_profit_dv['Capital Acumulado'][0]/capital)
+            
+    for i in range(1,len(df_profit_d["Profit Diario"])):
+         df_profit_d['Capital Acumulado'][i] = df_profit_d['Capital Acumulado'][i-1] + df_profit_d['Profit Diario'][i]
+         df_profit_d['Rendimientos Log'][i] = np.log(df_profit_d['Capital Acumulado'][i]/df_profit_d['Capital Acumulado'][i-1])
+         df_profit_d["Traceback Error"][i] = df_profit_d["Rendimientos Log"][i]-df_profit_d["Rend Log SP"][i]
+         
+         df_profit_dc['Capital Acumulado'][i] = df_profit_dc['Capital Acumulado'][i-1] + df_profit_dc['Profit Diario'][i]
+         df_profit_dc['Rendimientos Log'][i] = np.log(df_profit_dc['Capital Acumulado'][i]/df_profit_dc['Capital Acumulado'][i-1])
+         
+         df_profit_dv['Capital Acumulado'][i] = df_profit_dv['Capital Acumulado'][i-1] + df_profit_dv['Profit Diario'][i]
+         df_profit_dv['Rendimientos Log'][i] = np.log(df_profit_dv['Capital Acumulado'][i]/df_profit_dv['Capital Acumulado'][i-1])
+         
     m = 0
     c = 0
+     
     while m != 5:
-       m =  df_profit_d['Timestamp'][c].weekday()
-       c =  c + 1
-       
-    for i in range(c-1,len(df_profit_d['Timestamp']+1),6):
-
-        df_profit_d = df_profit_d.drop(df_profit_d.index[i])
-        df_profit_dc = df_profit_dc.drop(df_profit_dc.index[i])
-        df_profit_dv = df_profit_dv.drop(df_profit_dv.index[i])       
+        m = df_profit_d["Timestamp"][c].weekday()
+        c = c + 1
+    
+    lista = []
+    
+    for i in range (c-1,len(df_profit_d["Timestamp"])+1,7):
+        
+        lista.append(i)
+        
         
     
-    dicci = {'df':df_profit_diario, 'df_c':df_profit_dc, 'df_v':df_profit_dv}
-    
-    return dicci
-    
+        
+    df_profit_d = df_profit_d.drop(df_profit_d.index[lista])
+    df_profit_dc = df_profit_dc.drop(df_profit_dc.index[lista])
+    df_profit_dv = df_profit_dv.drop(df_profit_dv.index[lista])
+
+    df_profit_d = df_profit_d.reset_index(drop=True)
+    df_profit_dc = df_profit_dc.reset_index(drop=True)
+    df_profit_dv =  df_profit_dv.reset_index(drop=True) 
+         
+                  
+    dicci = {"df":df_profit_d ,"df_c":df_profit_dc,"df_v":df_profit_dv,"sp":sp}
+        
+    return dicci     
+            
+
+
 #%%
-def f_estadisticas_mad(param_data, param_data_1, param_data_2):
+def f_estadisticas_mad(param_data,param_data_1,param_data_2):
     rf = .08/300
     mar = .30/300
-    metrica = ['Sharpe', 'Sortino_c','Sortino_v','Drawdown_cap','Drawdown_cap','Information_r']
-    descripcion = ['Sharpe Ratio', 'Sortino Ratio para Posiciones de Compra','Sortino Ratio para Posiciones de Venta',
-                   'DrawDown de Capital', 'DrawUp de Capital','Information Ratio']
+    
+    metrica = ['Sharpe', 'Sortino_c','Sortino_v','Drawdown_cap',
+               'Drawup_cap','Information_r']
+    descripcion = ['Sharpe Ratio', 'Sortino Ratio para Posiciones de Compra',
+                   'Sortino Ratio para Posiciones de Venta','DrawUp de Capital',
+                   'DrawDown de Capital','Information Ratio']
    
     zero_data = np.zeros(shape=(len(descripcion),3))
     df_mad = pd.DataFrame(zero_data, columns = ['Metrica', 'Valor', 'Descripcion'])
@@ -297,16 +336,77 @@ def f_estadisticas_mad(param_data, param_data_1, param_data_2):
     for i in range(0,len(metrica)):
         df_mad['Metrica'][i] = metrica[i]
         df_mad['Descripcion'][i] = descripcion[i]
+        
+    MAX = 0
+    fecha_i = 0
+    fecha_f = 0
+    for i in range(0,len(param_data['Capital Acumulado'])-1):
+        k = i+1
+        maximo = 0
+        fecha_inicial = 0
+        fecha_final = 0
+        while param_data['Capital Acumulado'][i] > param_data['Capital Acumulado'][k]:
+            if param_data['Capital Acumulado'][i] - param_data['Capital Acumulado'][k] > maximo:
+                maximo = param_data['Capital Acumulado'][i] - param_data['Capital Acumulado'][k]
+                fecha_inicial = param_data['Timestamp'][i]
+                fecha_final = param_data['Timestamp'][k]
+            k = k+1
+        if maximo > MAX:
+            MAX = maximo
+            fecha_i = fecha_inicial
+            fecha_f = fecha_final
 
-    df_mad['Valor'][0] = (param_data['Rendimientos Log'].mean()-rf) / param_data['Rendimientos Log'].std()
-    df_mad['Valor'][1] = (param_data['Rendimientos Log'].mean()-mar) / param_data_1['Rendimientos Log'].lt(0).std()
-    df_mad['Valor'][2] = (param_data['Rendimientos Log'].mean()-mar) / param_data_2['Rendimientos Log'].lt(0).std()
-    df_mad['Valor'][3] = 0
-    df_mad['Valor'][4] = 0
-    df_mad['Valor'][5] = 0
+    MIN = 0
+    fecha_i_up = 0
+    fecha_f_up = 0
+    for i in range(0,len(param_data['Capital Acumulado'])-1):
+        k = i+1
+        minimo = 0
+        fecha_inicial_up = 0
+        fecha_final_up = 0
+        while k < len(param_data['Capital Acumulado']) and param_data['Capital Acumulado'][k] > param_data['Capital Acumulado'][i]:
+            if param_data['Capital Acumulado'][k] - param_data['Capital Acumulado'][i] > minimo:
+                minimo = param_data['Capital Acumulado'][k] - param_data['Capital Acumulado'][i]
+                fecha_inicial_up = param_data['Timestamp'][i]
+                fecha_final_up = param_data['Timestamp'][k]
+            k = k+1
+        if minimo > MIN:
+            MIN = minimo
+            fecha_i_up = fecha_inicial_up
+            fecha_f_up = fecha_final_up
 
-    return df_mad
+
+    df_mad['Valor'][0] = (param_data['Rendimientos Log'].mean() - rf)/ param_data['Rendimientos Log'].std()
+    df_mad['Valor'][1] = (param_data['Rendimientos Log'].mean() - mar)/param_data_1['Rendimientos Log'].lt(mar).std()
+    df_mad['Valor'][2] = (param_data['Rendimientos Log'].mean() - mar)/param_data_2['Rendimientos Log'].lt(mar).std()
+    df_mad['Valor'][3] = ' Fecha Inicial: ' + str(fecha_i) + ' Fecha Final: ' + str(fecha_f) + ' DrawDown: ' + str(MAX)
+    df_mad['Valor'][4] = ' Fecha Inicial: ' + str(fecha_i_up) + ' Fecha Final: ' + str(fecha_f_up) + ' DrawDown: ' + str(MIN)
+    df_mad['Valor'][5] = (param_data['Rendimientos Log'].mean() - param_data['Rend Log SP'].mean()) / param_data['Traceback Error'].std()    
     
+
+    
+    return df_mad
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

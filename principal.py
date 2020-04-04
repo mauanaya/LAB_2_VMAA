@@ -20,12 +20,14 @@ stats = fn.f_estadisticas_ba(param_data=datos)
 datos = fn.f_capital_acum(param_data=datos)
 
 #%%
-df_profit_diario = fn.f_profit_diario(param_data=datos)['df']
-df_profit_diario_compra = fn.f_profit_diario(param_data=datos)['df_c']
-df_profit_diario_venta = fn.f_profit_diario(param_data=datos)['df_v']
-
+df_profit_diario = fn.f_profit_diario(param_data=datos)["df"]
+df_profit_diario_c = fn.f_profit_diario(param_data=datos)["df_c"]
+df_profit_diario_v = fn.f_profit_diario(param_data=datos)["df_v"]
+df_sp = fn.f_profit_diario(param_data=datos)["sp"]
 #%%
-df_mad = fn.f_estadisticas_mad(param_data=df_profit_diario,
-                               param_data_1=df_profit_diario_compra,
-                               param_data_2=df_profit_diario_venta)
+df_mad = fn.f_estadisticas_mad(param_data=df_profit_diario, 
+                                        param_data_1=df_profit_diario_c,
+                                        param_data_2=df_profit_diario_v)
+
+
 
