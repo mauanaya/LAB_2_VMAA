@@ -29,6 +29,6 @@ df_mad = fn.f_estadisticas_mad(param_data=df_profit_diario,
                                         param_data_1=df_profit_diario_c,
                                         param_data_2=df_profit_diario_v)
 #%%
-df_be_de = fn.f_be_de(param_data=datos)
+df_disposition_effect = fn.f_be_de(param_data=datos)
 
 

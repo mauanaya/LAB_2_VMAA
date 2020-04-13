@@ -578,7 +578,7 @@ def f_estadisticas_mad(param_data,param_data_1,param_data_2):
 
 #%%
 def f_be_de(param_data):
-    
+    capital = 5000
     pips_inst =  {'audusd' : 10000, 'gbpusd': 10000, 'xauusd': 10, 'eurusd': 10000, 'xaueur': 10,
               'nas100usd': 10, 'us30usd': 10, 'mbtcusd':100, 'usdmxn': 10000, 'eurjpy':100, 
               'gbpjpy':100, 'usdjpy':100, 'btcusd':10, 'eurgbp':10000, 'usdcad':10000}
@@ -601,7 +601,7 @@ def f_be_de(param_data):
     param_data = param_data.sort_values(by="closetime")
     param_data = param_data.reset_index(drop=True)
     
-    param_data['capital_acm'][0] = 5000+param_data['profit'][0]
+    param_data['capital_acm'][0] = capital + param_data['profit'][0]
             
     for i in range(1,len(param_data['pips'])):
          param_data['capital_acm'][i] = param_data['capital_acm'][i-1] + param_data['profit'][i]
@@ -618,7 +618,6 @@ def f_be_de(param_data):
                         try:
                             fini = pd.to_datetime(param_data['closetime'][i])  # Fecha inicial
                             ffin = pd.to_datetime(param_data['closetime'][i])  # Fecha final
-                            print(fini,ffin)
                             df_pe = pm.f_precios_masivos(p0_fini=fini, p1_ffin=ffin, p2_gran=OA_Gn,
                                      p3_inst=OA_In, p4_oatk=OA_Ak, p5_ginc=4900)
                             
@@ -632,7 +631,7 @@ def f_be_de(param_data):
                                 indxmaxperdida = j
         if i == 0:
             
-            param_data["capital_flotante"][i] = param_data["profit"][i] + b + 5000
+            param_data["capital_flotante"][i] = param_data["profit"][i] + b + capital
         
         else:
             param_data["capital_flotante"][i] = param_data["profit"][i] + b + param_data["capital_acm"][i-1]
